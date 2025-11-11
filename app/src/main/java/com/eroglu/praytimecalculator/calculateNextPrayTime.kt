@@ -1,42 +1,35 @@
 package com.eroglu.praytimecalculator
 
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-fun calculateNextPrayTime(jsonString: String): Pair<Date, String>? {
+fun calculateNextPrayTime(jsonString: String, from: Date): Pair<Date, String>? {
     val gson = Gson()
     val prayTimeData = gson.fromJson(jsonString, PrayTimeData::class.java)
     val prayTimes: List<PrayTime> = prayTimeData.data
 
-    val now = Date()
-
     val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val dateTimeFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) //SimpleDateFormat zaman dilimi/locale ve DST (yaz/kış saati) konularında dikkat ister.
-//    val timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val dateTimeFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
 
-    // Bugünün tarihi
-    val todayStr = dateFormatter.format(now)
-    val today = dateFormatter.parse(todayStr)
+    val fromDateStr = dateFormatter.format(from)
+    val fromDate = dateFormatter.parse(fromDateStr)
 
-    val todayRecord = prayTimes.firstOrNull { it.tarih == todayStr }
+    val todayRecord = prayTimes.firstOrNull { it.tarih == fromDateStr }
 
     if (todayRecord != null) {
-        val next = findNextPrayerInDay(todayRecord, now, dateTimeFormatter)
+        val next = findNextPrayerInDay(todayRecord, from, dateTimeFormatter)
         if (next != null) return next
     }
 
     val nextRecord = prayTimes
         .filter {
             val recDate = dateFormatter.parse(it.tarih)
-            !recDate.before(today) // bugün ve sonrası
-//            recDate.after(today) // sadece bugünden SONRA
+            !recDate.before(fromDate) // bugün ve sonrası
         }
         .sortedBy { dateFormatter.parse(it.tarih).time }
         .getOrNull(1)   // bugün 0. index, yarın 1. index
-//        .firstOrNull() // en yakın gelecek gün, gün atlama olan yerlerde
 
     if (nextRecord != null) {
         val dateTime = dateTimeFormatter.parse("${nextRecord.tarih} ${nextRecord.imsak}")
