@@ -43,18 +43,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun DateTimePickerComponent() {
-    val context = LocalContext.current
-    val calendar = Calendar.getInstance()
-    var selectedDate by remember { mutableStateOf(calendar.time) }
-    var nextPrayTime by remember { mutableStateOf<Pair<Date, String>?>(null) }
+fun DateTimePickerComponent() { // ekrandaki tarih ve saat fonksiyonu
+    val context = LocalContext.current // Android sistemiyle etkileşim (örneğin assets klasörüne erişmek için)
+    val calendar = Calendar.getInstance() // tarih/saat işlemleri yapmak için
+    var selectedDate by remember { mutableStateOf(calendar.time) } // ekranın otomatik yenilenmesi (recomposition) [Bu değeri hatırla ve değişirse UI’ı yeniden çiz]
+    var nextPrayTime by remember { mutableStateOf<Pair<Date, String>?>(null) } // mutableStateOf: değiştirilebilir bir state (durum) oluşturur / remember → bu durumu Compose’un “hafızasında” saklar
+    // Pair<A, B> → iki değeri birlikte taşımak için kullanılan bir Kotlin veri yapısıdır
+    // JSON dosyasını okuma
     val jsonString = context.assets.open("vakitler.json").bufferedReader().use { it.readText() }
+    // .bufferedReader() → bu akışı “satır satır okuyabilen” bir BufferedReader’a çeviriyor
+    // .use { it.readText() } → dosyanın tamamını okuyup metin haline getiriyor.
+    // use { ... } bloğu bitince dosya otomatik kapanıyor
 
-    val datePickerDialog = DatePickerDialog(
-        context,
+    val datePickerDialog = DatePickerDialog( // DatePickerDialog → kullanıcıdan tarih alır
+        context, // Dialog’u nerede göstereceğini bilmesi için
         { _: DatePicker, year: Int, month: Int, dayOfMonth: Int ->
             calendar.set(year, month, dayOfMonth)
-            val timePickerDialog = TimePickerDialog(
+            val timePickerDialog = TimePickerDialog( // TimePickerDialog → kullanıcıdan saat alır.
                 context,
                 { _, hourOfDay: Int, minute: Int ->
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
@@ -64,12 +69,12 @@ fun DateTimePickerComponent() {
                 },
                 calendar.get(Calendar.HOUR_OF_DAY),
                 calendar.get(Calendar.MINUTE),
-                true
+                true // true verirsen hourOfDay 0..23 aralığında gelir. false ise AM/PM dönüşümü gerekir.
             )
             timePickerDialog.show()
         },
         calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.MONTH), //month değeri 0 ile 11 arasıdır.
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
@@ -78,15 +83,15 @@ fun DateTimePickerComponent() {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Seçilen Zaman: ${SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(selectedDate)}")
+        Text(text = "Seçilen Zaman: ${SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(selectedDate)}") // Locale.getDefault()) cihaza göre tarih saat
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { datePickerDialog.show() }) {
             Text("Tarih ve Saat Seç")
         }
         Spacer(modifier = Modifier.height(16.dp))
         nextPrayTime?.let {
-            val formattedDate = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(it.first)
-            Text(text = "Sonraki Vakit: $formattedDate, \"${it.second}\"")
+            val formattedDate = SimpleDateFormat("yyyy.MM.dd HH:mm", Locale.getDefault()).format(it.first) // it.first  → Date nesnesi (örnek: 2025-11-12 18:05)
+            Text(text = "Sonraki Vakit: $formattedDate, \"${it.second}\"") // it.second → String metni (örnek: "Akşam")
         }
     }
 }
